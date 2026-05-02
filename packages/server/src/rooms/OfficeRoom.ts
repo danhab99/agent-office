@@ -30,10 +30,10 @@ export class OfficeRoom extends Room<OfficeState> {
     private demoTickCount = 0;
     private coreAgents: Map<string, Agent> = new Map();
     private thinkingLocks: Map<string, boolean> = new Map();
-    private ollamaAdapter = new OllamaAdapter('http://localhost:11434');
+    private ollamaAdapter = new OllamaAdapter(process.env.OLLAMA_URL || 'http://localhost:11434');
     private hireCount = 0; // Counter for generating unique IDs
     private toolExecutor = new ToolExecutor();
-    private memoryStore = new MemoryStore();
+    private memoryStore = new MemoryStore(process.env.OLLAMA_URL || 'http://localhost:11434');
     private sessionId = `session_${Date.now()}`;
     private currentScenario = 'Free Play';
     private highlights: HighlightEvent[] = [];
@@ -69,7 +69,8 @@ export class OfficeRoom extends Room<OfficeState> {
         this.setState(new OfficeState());
 
         // Initialize memory store
-        await this.memoryStore.initialize();
+        const dataDir = process.env.DATA_DIR || './data';
+        await this.memoryStore.initialize(`${dataDir}/office-memory.db`);
 
         const config: OfficeConfig = {
             name: options.name || 'Startup HQ',
