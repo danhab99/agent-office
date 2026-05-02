@@ -221,10 +221,8 @@
         # ── Shared workspace build ──────────────────────────────────────────
         # Compiles all TypeScript packages in the npm workspace.
         #
-        # IMPORTANT: This derivation requires a package-lock.json at the repo
-        # root. Generate it with:
-        #   npm install --package-lock-only
-        # Then update npmDepsHash by running:
+        # The package-lock.json is committed to the repository.  If you update
+        # dependencies, regenerate it with `npm install`, then re-pin the hash:
         #   nix run nixpkgs#prefetch-npm-deps -- package-lock.json
         workspaceBuilt = pkgs.stdenv.mkDerivation {
           pname = "agent-office-workspace";
@@ -236,13 +234,14 @@
             pkgs.npmHooks.npmConfigHook
           ];
 
-          # Populated by npmConfigHook using the pinned npmDeps store path.
           npmDeps = pkgs.fetchNpmDeps {
             name = "agent-office-npm-deps";
             src = ./.;
-            # Run `nix run nixpkgs#prefetch-npm-deps -- package-lock.json`
-            # after generating package-lock.json to obtain the correct hash.
-            hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+            # This hash must match the current package-lock.json.
+            # If it is wrong, run:
+            #   nix run nixpkgs#prefetch-npm-deps -- package-lock.json
+            # and paste the output here.
+            hash = "";
           };
 
           buildPhase = ''

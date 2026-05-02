@@ -166,9 +166,17 @@ inputs.agent-office.url = "github:danhab99/agent-office";
 
 ### Build packages locally
 
+`package-lock.json` is committed to the repository, but the Nix npm-deps hash
+must be pinned to it. On first build (or after updating dependencies) you will
+get a hash-mismatch error that prints the correct value. Copy that value into
+`flake.nix → fetchNpmDeps.hash`:
+
 ```bash
-# First-time setup: generate package-lock.json, then pin the hash
-npm install --package-lock-only
+# First build: Nix will print the real hash in the error message.
+# Copy it into flake.nix → fetchNpmDeps.hash, then build again.
+nix build .#server
+
+# Or compute the hash upfront without a failed build:
 nix run nixpkgs#prefetch-npm-deps -- package-lock.json
 # Paste the printed hash into flake.nix → fetchNpmDeps.hash
 
