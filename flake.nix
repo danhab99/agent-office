@@ -232,6 +232,9 @@
           nativeBuildInputs = [
             pkgs.nodejs_20
             pkgs.npmHooks.npmConfigHook
+            # sqlite3 is a native addon compiled via node-gyp, which requires Python.
+            pkgs.python3
+            pkgs.nodePackages.node-gyp
           ];
 
           npmDeps = pkgs.fetchNpmDeps {
