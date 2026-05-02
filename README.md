@@ -125,7 +125,84 @@ This starts the **server** (port 3000), **UI** (port 80), **Ollama** (with GPU),
 
 ---
 
+## ❄️ NixOS / Nix Deployment
+
+AgentOffice ships a `flake.nix` that provides:
+
+- **Nix packages** — `server` (Node.js binary) and `ui` (static Vite assets)
+- **NixOS module** — installs both packages as hardened systemd services
+
+### Add to your NixOS configuration
+
+```nix
+# flake.nix (your system)
+inputs.agent-office.url = "github:danhab99/agent-office";
+
+# In your NixOS module:
+{ inputs, ... }: {
+  imports = [ inputs.agent-office.nixosModules.default ];
+
+  services.agent-office = {
+    enable   = true;
+    port     = 3000;          # Colyseus/Express server port
+    uiPort   = 8080;          # nginx UI port
+    dataDir  = "/var/lib/agent-office";  # SQLite storage
+    ollamaUrl = "http://localhost:11434"; # Ollama endpoint
+    # tavilyApiKey = "tvly-...";  # optional — enables web search
+  };
+}
+```
+
+### Module options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `enable` | `false` | Enable both services |
+| `port` | `3000` | TCP port for the Colyseus/Express server |
+| `uiPort` | `8080` | TCP port for the nginx UI reverse-proxy |
+| `dataDir` | `/var/lib/agent-office` | Persistent storage directory (SQLite databases) |
+| `ollamaUrl` | `http://localhost:11434` | Base URL of the Ollama inference server |
+| `tavilyApiKey` | `""` | Optional Tavily API key; falls back to DuckDuckGo when empty |
+
+### Build packages locally
+
+```bash
+# First-time setup: generate package-lock.json, then pin the hash
+npm install --package-lock-only
+nix run nixpkgs#prefetch-npm-deps -- package-lock.json
+# Paste the printed hash into flake.nix → fetchNpmDeps.hash
+
+# Build the server binary
+nix build .#server
+
+# Build the UI static assets
+nix build .#ui
+
+# Enter a dev shell with Node.js + nginx
+nix develop
+```
+
+---
+
 ## 🔧 Configuration
+
+### Environment Variables
+
+The server reads the following environment variables (all optional):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3000` | TCP port the Colyseus/Express server listens on |
+| `DATABASE_URL` | `sqlite:./office.db` | SQLite database path (prefix with `sqlite:`) |
+| `DATA_DIR` | `./data` | Directory for the agent memory SQLite database |
+| `OLLAMA_URL` | `http://localhost:11434` | Base URL of the Ollama inference server |
+| `TAVILY_API_KEY` | _(unset)_ | Enables Tavily web search; falls back to DuckDuckGo when unset |
+
+Copy `.env.example` to `.env` and fill in any values you want to override:
+
+```bash
+cp .env.example .env
+```
 
 ### Change the LLM Model
 
