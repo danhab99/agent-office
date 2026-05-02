@@ -232,10 +232,24 @@
           nativeBuildInputs = [
             pkgs.nodejs_20
             pkgs.npmHooks.npmConfigHook
-            # sqlite3 is a native addon compiled via node-gyp, which requires Python.
+            # sqlite3 is a native addon; node-gyp needs Python, pkg-config, and
+            # the sqlite headers to compile it.
             pkgs.python3
+            pkgs.pkg-config
             pkgs.nodePackages.node-gyp
           ];
+
+          # buildInputs carries the sqlite runtime + headers into the build
+          # environment so node-gyp can find libsqlite3.
+          buildInputs = [ pkgs.sqlite ];
+
+          # Explicitly wire up Python and the sqlite prefix so npm's bundled
+          # node-gyp finds them even when PATH-based lookup returns empty (which
+          # happens in the Nix sandbox during patchPhase).  These env vars are
+          # set for every phase, including the npmConfigHook patchPhase where
+          # `npm install` (and the sqlite3 postinstall) runs.
+          npm_config_python = "${pkgs.python3}/bin/python3";
+          npm_config_sqlite = "${pkgs.sqlite.dev}";
 
           npmDeps = pkgs.fetchNpmDeps {
             name = "agent-office-npm-deps";
